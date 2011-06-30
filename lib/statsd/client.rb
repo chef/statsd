@@ -20,7 +20,7 @@ module Statsd
     end
 
     # @param [String] key (relative) metric key
-    # @param [Integer] sample_rate sample rate, 1 for always
+    # @param [Integer] sample_rate sample rate, nil for always
     def mark(key, sample_rate=nil)
       send_stats(:meter, key, 1, sample_rate)
     end
@@ -29,7 +29,7 @@ module Statsd
 
     # @param [String] key (relative) metric key
     # @param [Integer] count count
-    # @param [Integer] sample_rate sample rate, 1 for always
+    # @param [Integer] sample_rate sample rate, nil for always
     def histogram(key, count, sample_rate=nil)
       send_stats(:histogram, key, count, sample_rate)
     end
@@ -38,14 +38,14 @@ module Statsd
 
     # @param [String] key (relative) metric key
     # @param [Integer] ms timing in milliseconds
-    # @param [Integer] sample_rate sample rate, 1 for always
+    # @param [Integer] sample_rate sample rate, nil for always
     def timing(key, ms, sample_rate=nil)
       send_stats(:histogram, key, ms, sample_rate)
     end
 
     # @param [String] stat stat name
     # @param [Integer] ms timing in milliseconds
-    # @param [Integer] sample_rate sample rate, 1 for always
+    # @param [Integer] sample_rate sample rate, nil for always
     def meter_reader(key, v, sample_rate=nil)
       send_stats(:meter_reader, key, v, sample_rate)
     end
@@ -62,9 +62,8 @@ module Statsd
 
     def send_stats(type, key, value, sample_rate=nil)
       prefix = "#{@namespace}." unless @namespace.nil?
-      #"#{prefix}#{key}:#{value}|#{type}#{'|@' << sample_rate.to_s if sample_rate < 1}"
       message = Message.new.add_metric(type, "#{prefix}#{key}", value, sample_rate)
-      socket.send(message.to_s, 0, @host, @port) unless message.content_length == 0
+      socket.send(message.to_s, 0, @host, @port) unless message.empty?
     end
 
     def socket
@@ -98,7 +97,7 @@ module Statsd
     end
 
     def flush_metrics
-      socket.send(message.to_s, 0, @host, @port) unless message.content_length == 0
+      socket.send(message.to_s, 0, @host, @port) unless message.emtpy?
       setup_message
     end
 

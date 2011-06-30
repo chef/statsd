@@ -9,6 +9,10 @@ describe Statsd::Message do
     @message.content_length.should == 0
   end
 
+  it "is empty" do
+    @message.should be_empty
+  end
+
   it "has a protocol_version" do
     Statsd::Message::PROTOCOL_VERSION.should == "1"
   end

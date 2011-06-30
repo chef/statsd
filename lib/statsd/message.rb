@@ -24,6 +24,10 @@ module Statsd
       @body.bytesize
     end
 
+    def empty?
+      @body.empty?
+    end
+
     def add_metric(type, key, value, sample_rate=nil)
 
       unless type_str = PRIMITIVES[type]
