@@ -72,5 +72,36 @@ module Statsd
     end
 
   end
+
+  class MultiClient < Client
+
+    attr_reader :message
+
+    def initialize(*args)
+      super
+      setup_message
+    end
+
+    def setup_message
+      @message = Message.new
+    end
+
+    def add_metrics
+      yield self
+      flush_metrics
+    end
+
+    def send_stats(type, key, value, sample_rate=nil)
+      prefix = "#{@namespace}." unless @namespace.nil?
+      message.add_metric(type, "#{prefix}#{key}", value, sample_rate)
+      flush_metrics if message.content_length > 1000
+    end
+
+    def flush_metrics
+      socket.send(message.to_s, 0, @host, @port) unless message.content_length == 0
+      setup_message
+    end
+
+  end
 end
 

@@ -5,7 +5,9 @@ describe Statsd::Client do
     @client = Statsd::Client.new("localhost", 1234)
     class << @client
       attr_reader :host, :port # we also need to test this
-      def socket; @socket ||= FakeUDPSocket.new end
+      def socket
+        @socket ||= FakeUDPSocket.new
+      end
     end
   end
 
@@ -60,6 +62,26 @@ describe Statsd::Client do
       @client.timing("foobar", 500)
       @client.socket.recv.should == [Statsd::Message.new.add_metric(:h, "service.foobar", 500).to_s]
     end
+  end
+end
+
+describe Statsd::MultiClient do
+  before do
+    @client = Statsd::MultiClient.new("localhost", 3344)
+    def @client.socket
+      @socket ||= FakeUDPSocket.new
+    end
+  end
+
+  it "writes multiple stats in a message" do
+    @client.add_metrics do |m|
+      m.increment("http_requests")
+      m.timing("http_request_time", 200)
+    end
+    msg = Statsd::Message.new
+    msg.add_metric(:m, "http_requests", 1)
+    msg.add_metric(:h, "http_request_time", 200)
+    @client.socket.recv.should == [msg.to_s]
   end
 end
 
